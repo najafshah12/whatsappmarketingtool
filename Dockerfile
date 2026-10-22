@@ -16,4 +16,3 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
 EXPOSE 3000
 CMD ["node","node_modules/next/dist/bin/next","start","-H","0.0.0.0"]
-

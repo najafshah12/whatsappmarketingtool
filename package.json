@@ -8,7 +8,9 @@
     "start": "next start -H 0.0.0.0",
     "lint": "tsc --noEmit",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "auth:hash-password": "node scripts/hash-password.mjs",
+    "auth:setup-local": "node scripts/setup-local-admin.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",

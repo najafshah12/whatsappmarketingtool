@@ -2,4 +2,3 @@ import { NextResponse } from "next/server"; import { prisma } from "@/lib/prisma
 const schema=z.object({name:z.string().trim().min(1).max(100).optional(),phone:z.string().trim().regex(/^\+?[1-9]\d{7,14}$/).optional(),email:z.string().email().or(z.literal("")).nullable().optional(),groupName:z.string().nullable().optional(),tags:z.array(z.string()).optional(),optedOut:z.boolean().optional()});
 export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){try{const {id}=await params;const data=schema.parse(await req.json());return NextResponse.json(await prisma.contact.update({where:{id},data}));}catch(e){if(e instanceof z.ZodError)return NextResponse.json({error:e.issues[0]?.message},{status:400});return apiError(e)}}
 export async function DELETE(_:Request,{params}:{params:Promise<{id:string}>}){try{const{id}=await params;await prisma.contact.delete({where:{id}});return NextResponse.json({ok:true})}catch(e){return apiError(e)}}
-
