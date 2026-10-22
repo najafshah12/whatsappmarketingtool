@@ -1,0 +1,3 @@
+import { NextResponse } from "next/server"; import { prisma } from "@/lib/prisma"; import { apiError } from "@/lib/api";
+export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){try{const {id}=await params;const {status}=await req.json();if(!["draft","scheduled","running","paused","completed"].includes(status))return NextResponse.json({error:"Invalid status"},{status:400});return NextResponse.json(await prisma.campaign.update({where:{id},data:{status}}))}catch(e){return apiError(e)}}
+

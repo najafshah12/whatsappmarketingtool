@@ -1,0 +1,5 @@
+import { NextResponse } from "next/server"; import { prisma } from "@/lib/prisma"; import { apiError } from "@/lib/api"; import { z } from "zod";
+const schema=z.object({name:z.string().trim().min(1),body:z.string().trim().min(1),language:z.string().default("en_US"),status:z.string().default("draft")});
+export async function GET(){try{return NextResponse.json(await prisma.template.findMany({orderBy:{createdAt:"desc"}}))}catch(e){return apiError(e)}}
+export async function POST(req:Request){try{const d=schema.parse(await req.json());return NextResponse.json(await prisma.template.create({data:d}),{status:201})}catch(e){if(e instanceof z.ZodError)return NextResponse.json({error:e.issues[0]?.message},{status:400});return apiError(e)}}
+

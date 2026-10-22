@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String
+  createdAt DateTime   @default(now())
+  contacts  Contact[]
+  campaigns Campaign[]
+  auditLogs AuditLog[]
+}
+
+model Contact {
+  id        String    @id @default(cuid())
+  name      String
+  phone     String    @unique
+  email     String?
+  groupName String?
+  tags      String[]  @default([])
+  optedOut  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id])
+  messages  Message[]
+}
+
+model Campaign {
+  id          String    @id @default(cuid())
+  name        String
+  message     String
+  status      String    @default("draft")
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  total       Int       @default(0)
+  delivered   Int       @default(0)
+  read        Int       @default(0)
+  failed      Int       @default(0)
+  createdAt   DateTime  @default(now())
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+  messages    Message[]
+}
+
+model Template {
+  id        String   @id @default(cuid())
+  name      String
+  body      String
+  status    String   @default("draft")
+  language  String   @default("en_US")
+  createdAt DateTime @default(now())
+}
+
+model Message {
+  id         String        @id @default(cuid())
+  contactId  String
+  campaignId String?
+  status     String        @default("queued")
+  providerId String?
+  error      String?
+  sentAt     DateTime?
+  createdAt  DateTime      @default(now())
+  contact    Contact       @relation(fields: [contactId], references: [id])
+  campaign   Campaign?     @relation(fields: [campaignId], references: [id])
+  events     MessageEvent[]
+}
+
+model MessageEvent {
+  id        String   @id @default(cuid())
+  messageId String
+  status    String
+  timestamp DateTime @default(now())
+  payload   Json?
+  message   Message  @relation(fields: [messageId], references: [id])
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String?
+  detail    Json?
+  createdAt DateTime @default(now())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
