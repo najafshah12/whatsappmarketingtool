@@ -1,54 +1,42 @@
-# WaStudio
+# Intellect Bulk Sender
 
-A WhatsApp Business campaign management workspace built with Next.js, React, TypeScript, Tailwind CSS, Prisma, and PostgreSQL.
+A WhatsApp Business campaign workspace built with Next.js, React, TypeScript, Prisma, and PostgreSQL.
 
-## What works
+## Workspace modules
 
-- Contact management with validation, search, group filtering, opt-out controls, CSV import/export, editing, and deletion.
-- Campaign drafts and scheduled records, audience eligibility counts, and status management. Opted-out contacts are excluded from the audience count.
-- Message template records and local approval-status tracking.
-- Dashboard and reports backed by persisted records. Delivery and read counts are not estimated.
-- Official WhatsApp Cloud API configuration status and webhook verification endpoint.
+- Dashboard metrics and recent campaign records read from PostgreSQL.
+- Inbox stores incoming messages and delivery events received through the signed WhatsApp webhook.
+- Previous Campaign Records displays saved campaign delivery counts and status.
+- Accounts stores sender number metadata and campaign assignments. Access tokens are not stored in account rows.
+- Create Campaign saves the campaign, eligible recipients, selected audience, sender assignments, and optional schedule.
+- Audience Pool stores contact lists and membership, with opt-outs excluded from campaign recipients.
+- Campaign Designer saves message drafts with language and category.
+- Sending & Schedule lists scheduled records and allows status changes.
 
-Live message submission and Meta template synchronization require an authorized Meta Business account and credentials. Campaigns are not sent by this app yet. Do not treat saved campaigns or local template status as provider submission or approval.
+The app does not include fake historical analytics. Creating a schedule stores a due time but does not start a background sender. Outbound message submission, inbox replies, and provider template synchronization require additional WhatsApp Cloud API work and credentials. A locally saved template is not a Meta-approved template.
 
-## Requirements
+## Requirements and startup
 
 - Node.js 20+
-- pnpm (or npm)
-- PostgreSQL 16+
-- Docker Compose (optional, to run PostgreSQL)
+- pnpm
+- PostgreSQL 16+ (or Docker Compose)
 
-## Development startup
+1. Run `pnpm install`.
+2. Copy `.env.example` to `.env` and set the local database URL.
+3. Start PostgreSQL with `docker compose up -d postgres` or use another PostgreSQL server.
+4. Apply migrations and generate Prisma Client with `pnpm run prisma:migrate` and `pnpm run prisma:generate`.
+5. Start the app with `pnpm run dev` and open `http://localhost:3000`.
 
-1. Install dependencies: `pnpm install`
-2. Copy `.env.example` to `.env` and set `DATABASE_URL`.
-3. Start a PostgreSQL instance. With Docker: `docker compose up -d postgres`
-4. Apply schema and generate Prisma Client: `pnpm run prisma:migrate` then `pnpm run prisma:generate`
-5. Start Next.js: `pnpm run dev`
-6. Open `http://localhost:3000`.
+The migration adds sender accounts, campaign assignments, normalized audience groups, and inbox conversations. Existing contact group names are copied into audience membership records; existing campaign and contact data is preserved.
 
-The app requires a database for API requests. It shows an actionable connection error when PostgreSQL is unavailable.
+## WhatsApp webhook
 
-## WhatsApp setup
-
-Set `WA_ACCESS_TOKEN`, `WA_PHONE_NUMBER_ID`, `WA_BUSINESS_ACCOUNT_ID`, `WA_WEBHOOK_VERIFY_TOKEN`, and `WA_APP_SECRET` in the server environment, then restart the app. Configure Meta's webhook callback URL as `https://your-domain/api/webhook` and use the same verify token. The GET verification handshake is implemented. Signed webhook status ingestion is implemented and checks `x-hub-signature-256`. Outbound message submission and provider template synchronization are not yet implemented; credentials alone do not enable sending.
-
-## Tests and production build
-
-- Type check: `pnpm exec tsc --noEmit`
-- Production build: `pnpm run build`
-- Start production server: `pnpm run start`
-
-Playwright is not wired into this initial project. No tests are reported as passing until configured and run against a database-backed instance.
+Set `WA_ACCESS_TOKEN`, `WA_PHONE_NUMBER_ID`, `WA_BUSINESS_ACCOUNT_ID`, `WA_WEBHOOK_VERIFY_TOKEN`, and `WA_APP_SECRET` as server environment variables. Set Meta's callback URL to `https://your-domain/api/webhook`. The endpoint verifies webhook signatures before processing delivery statuses or storing incoming replies.
 
 ## Deployment
 
-Build the application with `pnpm run build`; run it with `pnpm run start`, with PostgreSQL reachable through `DATABASE_URL`. `docker-compose.yml` describes a local PostgreSQL service and app container. Create `.env` from the example and use strong, private values in deployment. Do not commit credentials.
+Build with `pnpm run build` and run with `pnpm run start`. Set `DATABASE_URL` and `DATABASE_URL_UNPOOLED` in the deployment environment. Apply database migrations with `pnpm exec prisma migrate deploy` before serving the updated app. Keep `.env` and all credentials out of Git.
 
-## Security notes
+## Security
 
-The current workspace UI is a single-admin prototype with no login or authorization middleware. Do not expose it publicly until authentication, authorization, webhook signature validation, and rate limiting have been added. API routes validate user input and avoid returning server-side exceptions or credentials.
-
-
-
+This workspace is a single-admin prototype without login or role-based authorization. Add authentication and authorization before exposing administrative routes publicly. API routes validate user input and avoid returning server-side exceptions or credentials.
