@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyPassword } from "@/lib/auth";
-import { startEmailChallenge } from "@/lib/auth-challenge";
+import { createSessionToken, sessionCookieName, verifyPassword } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
@@ -14,10 +13,13 @@ export async function POST(req: Request) {
     if (!configuredUsername || !passwordHash || !process.env.AUTH_SESSION_SECRET) return NextResponse.json({ error: "Login is not configured on this server yet." }, { status: 503 });
     const matches = username.trim().toLowerCase() === configuredUsername.trim().toLowerCase() && await verifyPassword(password, passwordHash);
     if (!matches) return NextResponse.json({ error: "Login ID or password is incorrect." }, { status: 401 });
-    const challengeId = await startEmailChallenge("login");
-    return NextResponse.json({ challengeId, emailHint: process.env.ADMIN_EMAIL?.replace(/^(.{1,2}).*(@.*)$/, "$1•••$2") });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not start email verification.";
-    return NextResponse.json({ error: message }, { status: 503 });
+    const mustChangePassword = !savedHash;
+    const response = NextResponse.json({ ok: true, mustChangePassword });
+    response.cookies.set(sessionCookieName, createSessionToken(configuredUsername, mustChangePassword), {
+      httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 60 * 60 * 12,
+    });
+    return response;
+  } catch {
+    return NextResponse.json({ error: "Could not sign in. Check the database connection and try again." }, { status: 503 });
   }
 }

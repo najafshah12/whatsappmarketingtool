@@ -37,10 +37,10 @@ Set `WA_ACCESS_TOKEN`, `WA_PHONE_NUMBER_ID`, `WA_BUSINESS_ACCOUNT_ID`, `WA_WEBHO
 
 Build with `pnpm run build` and run with `pnpm run start`. Set `DATABASE_URL` and `DATABASE_URL_UNPOOLED` in the deployment environment. Apply database migrations with `pnpm exec prisma migrate deploy` before serving the updated app. Keep `.env` and all credentials out of Git.
 
-## Admin login and email verification
+## Admin login and password
 
-The app is protected by a single-admin sign-in. Set `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, and a private `AUTH_SESSION_SECRET` (at least 32 characters). The bootstrap password is only used to get started; after the first email-verified sign-in, the app requires a new password of at least 12 characters. Password changes require a fresh email code. Passwords are stored as scrypt hashes, sessions use an HttpOnly cookie, and email codes expire after 10 minutes with a short request limit.
+The app is protected by a single-admin username and password sign-in. Set `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, and a private `AUTH_SESSION_SECRET` (at least 32 characters). After the first sign-in, the app requires a new password of at least 12 characters. Password changes require the current password. Passwords are stored as scrypt hashes and sessions use an HttpOnly cookie. Email verification is not used.
 
-For local setup, run `pnpm run auth:setup-local` and enter the initial password when prompted; it stores only a scrypt hash and a generated session secret in the ignored `.env` file. To prepare a hash for a deployment, run `pnpm run auth:hash-password` and copy the result to `ADMIN_PASSWORD_HASH`. Do not put the plain password in `.env` or Git. Configure Resend by setting `RESEND_API_KEY` and `RESEND_FROM_EMAIL` to an address/domain verified in Resend; `ADMIN_EMAIL` receives the login and password-change codes. Keep all of these values private. Configure the same variables in the deployment environment before deploying this authentication change.
+For local setup, run `pnpm run auth:setup-local` and enter the initial password when prompted; it stores only a scrypt hash and a generated session secret in the ignored `.env` file. To prepare a hash for a deployment, run `pnpm run auth:hash-password` and copy the result to `ADMIN_PASSWORD_HASH`. Do not put the plain password in `.env` or Git.
 
-All app pages and API routes require a valid admin session, except the login and verification endpoints. Change password and sign out controls are available in the sidebar.
+All app pages and API routes require a valid admin session, except the login and webhook endpoints. Change password and sign out controls are available in the sidebar.

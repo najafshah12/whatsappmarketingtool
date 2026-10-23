@@ -33,7 +33,6 @@ function setEnv(source, key, value) {
 
 let env = await readFile(envPath, "utf8").catch(() => "");
 env = setEnv(env, "ADMIN_USERNAME", "abis");
-env = setEnv(env, "ADMIN_EMAIL", "najaf.ale@gmail.com");
 if (!/^ADMIN_PASSWORD_HASH=.+$/m.test(env) || process.argv.includes("--reset-password")) {
   const password = await askHidden("Enter the initial password for abis (input hidden): ");
   if (password.length < 6) throw new Error("The initial password must have at least 6 characters.");
@@ -43,4 +42,4 @@ if (!/^ADMIN_PASSWORD_HASH=.+$/m.test(env) || process.argv.includes("--reset-pas
 }
 if (!/^AUTH_SESSION_SECRET=.+$/m.test(env)) env = setEnv(env, "AUTH_SESSION_SECRET", randomBytes(32).toString("hex"));
 await writeFile(envPath, env, "utf8");
-process.stdout.write("Local admin login is initialized. Add the Resend email settings to .env to enable email codes.\n");
+process.stdout.write("Local admin password login is initialized. Change the temporary password after the first sign-in.\n");

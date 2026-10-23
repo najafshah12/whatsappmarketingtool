@@ -9,6 +9,7 @@
     "lint": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "db:seed-demo": "node --env-file=.env scripts/seed-demo.mjs",
     "auth:hash-password": "node scripts/hash-password.mjs",
     "auth:setup-local": "node scripts/setup-local-admin.mjs"
   },
