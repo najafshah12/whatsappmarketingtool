@@ -8,8 +8,12 @@ const schema = z.object({ name: z.string().trim().min(1).max(80), description: z
 export async function GET() {
   try {
     const groups = await prisma.audienceGroup.findMany({ orderBy: { name: "asc" }, include: { _count: { select: { members: true } }, members: { select: { contactId: true } } } });
-    const [contacts, optedOut] = await Promise.all([prisma.contact.count(), prisma.contact.count({ where: { optedOut: true } })]);
-    return NextResponse.json({ groups, contacts, optedOut, eligible: contacts - optedOut });
+    const [contacts, optedOut, eligible] = await Promise.all([
+      prisma.contact.count(),
+      prisma.contact.count({ where: { optedOut: true } }),
+      prisma.contact.count({ where: { optedOut: false, marketingOptIn: true } }),
+    ]);
+    return NextResponse.json({ groups, contacts, optedOut, eligible });
   } catch (error) { return apiError(error); }
 }
 

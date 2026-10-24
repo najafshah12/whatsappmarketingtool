@@ -3,7 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { apiError } from "@/lib/api";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  try { const { id } = await params; const { status } = await req.json(); if (!['connected', 'disconnected', 'attention'].includes(status)) return NextResponse.json({ error: "Invalid account status." }, { status: 400 }); return NextResponse.json(await prisma.whatsAppAccount.update({ where: { id }, data: { status } })); }
+  try {
+    const { id } = await params;
+    const { status } = await req.json();
+    if (!['disconnected', 'attention'].includes(status)) return NextResponse.json({ error: "Connected status can only be set by completing Meta signup." }, { status: 400 });
+    return NextResponse.json(await prisma.whatsAppAccount.update({ where: { id }, data: { status }, select: { id: true, name: true, phone: true, status: true } }));
+  }
   catch (error) { return apiError(error); }
 }
 

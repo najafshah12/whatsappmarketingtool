@@ -1,46 +1,61 @@
 # ReachPulse
 
-ReachPulse — Amplifying Your Reach. A WhatsApp Business campaign workspace built with Next.js, React, TypeScript, Prisma, and PostgreSQL.
+ReachPulse is a WhatsApp Business campaign workspace built with Next.js, React, TypeScript, Prisma, and PostgreSQL.
 
-## Workspace modules
+## Working modules
 
-- Dashboard metrics and recent campaign records read from PostgreSQL.
-- Inbox stores incoming messages and delivery events received through the signed WhatsApp webhook.
-- Previous Campaign Records displays saved campaign delivery counts and status.
-- Accounts stores sender number metadata and campaign assignments. Access tokens are not stored in account rows.
-- Create Campaign saves the campaign, eligible recipients, selected audience, sender assignments, and optional schedule.
-- Audience Pool stores contact lists and membership, with opt-outs excluded from campaign recipients.
-- Campaign Designer saves message drafts with language and category.
-- Sending & Schedule lists scheduled records and allows status changes.
+- Dashboard metrics and campaign history are read from PostgreSQL.
+- Inbox stores signed WhatsApp webhooks, delivery updates, and inbound replies. Free-text replies are sent through the matching sender during the 24-hour customer-service window.
+- Accounts connect WhatsApp Business numbers with Meta Embedded Signup. Access tokens are encrypted at rest and never returned by account APIs.
+- Campaign Designer creates message-template drafts, submits them to Meta, and refreshes provider approval status.
+- Audience Pool supports contact entry, CSV import, audience lists, explicit marketing opt-in, and opt-out. Incoming `STOP`, `UNSUBSCRIBE`, `CANCEL`, `END`, and `QUIT` requests disable marketing sends.
+- Create Campaign makes drafts or schedules. Only contacts with recorded opt-in and without an opt-out are queued. A scheduled campaign requires a Meta-approved template and the connected sender that owns it.
+- Sending uses the official WhatsApp Cloud API, processes small batches, and records provider message IDs, errors, and delivery events.
 
-The app does not include fake historical analytics. Creating a schedule stores a due time but does not start a background sender. Outbound message submission, inbox replies, and provider template synchronization require additional WhatsApp Cloud API work and credentials. A locally saved template is not a Meta-approved template.
+The app never marks a template approved by itself, and it does not send marketing campaigns to imported contacts unless the CSV explicitly includes a consent value. Use only numbers you own and contacts who agreed to receive messages.
 
-## Requirements and startup
+## Requirements and local startup
 
 - Node.js 20+
 - pnpm
 - PostgreSQL 16+ (or Docker Compose)
 
 1. Run `pnpm install`.
-2. Copy `.env.example` to `.env` and set the local database URL.
+2. Copy `.env.example` to `.env` and set `DATABASE_URL` and `DATABASE_URL_UNPOOLED`.
 3. Start PostgreSQL with `docker compose up -d postgres` or use another PostgreSQL server.
-4. Apply migrations and generate Prisma Client with `pnpm run prisma:migrate` and `pnpm run prisma:generate`.
+4. Apply migrations and generate Prisma Client: `pnpm exec prisma migrate deploy` and `pnpm run prisma:generate`.
 5. Start the app with `pnpm run dev` and open `http://localhost:3000`.
 
-The migration adds sender accounts, campaign assignments, normalized audience groups, and inbox conversations. Existing contact group names are copied into audience membership records; existing campaign and contact data is preserved.
+## Meta / WhatsApp setup
 
-## WhatsApp webhook
+Create and configure a Meta developer app with WhatsApp Business Platform and Embedded Signup. Set these server-side variables in Vercel or `.env`:
 
-Set `WA_ACCESS_TOKEN`, `WA_PHONE_NUMBER_ID`, `WA_BUSINESS_ACCOUNT_ID`, `WA_WEBHOOK_VERIFY_TOKEN`, and `WA_APP_SECRET` as server environment variables. Set Meta's callback URL to `https://your-domain/api/webhook`. The endpoint verifies webhook signatures before processing delivery statuses or storing incoming replies.
+- `META_APP_ID`: Meta developer app ID.
+- `META_CONFIG_ID`: the Embedded Signup configuration ID.
+- `META_APP_SECRET`: private Meta app secret; also used to verify webhook signatures.
+- `WA_WEBHOOK_VERIFY_TOKEN`: a private value entered in the Meta webhook configuration.
+- `WA_TOKEN_ENCRYPTION_KEY`: a private random value of at least 32 characters. If omitted, token encryption derives a key from `AUTH_SESSION_SECRET`; keep that secret stable or previously connected tokens cannot be decrypted.
+- `WA_GRAPH_API_VERSION`: optional Graph API version; defaults to `v23.0`.
 
-## Deployment
+Then:
 
-Build with `pnpm run build` and run with `pnpm run start`. Set `DATABASE_URL` and `DATABASE_URL_UNPOOLED` in the deployment environment. Apply database migrations with `pnpm exec prisma migrate deploy` before serving the updated app. Keep `.env` and all credentials out of Git.
+1. Open **Accounts → Connect with Meta** and complete the Meta business / number flow.
+2. In the Meta app, set the callback URL to `https://your-domain/api/webhook`, enter the same verify token, and subscribe to WhatsApp message and message-status fields. The server verifies `X-Hub-Signature-256` with the Meta app secret.
+3. Create a draft under **Campaign Designer** and submit it using the connected business sender. Wait for Meta to approve it; refresh the provider status from the draft card.
+4. Import or add audience contacts with documented opt-in. Create a campaign with the approved template and its sender, then use **Send next batch** or schedule it.
 
-## Admin login and password
+Meta app review, business verification, permissions, template approval, and sender eligibility remain controlled by Meta. The deployment currently has no Meta app credentials configured, so live signup/sends stay disabled until the owner adds them in Vercel.
 
-The app is protected by a single-admin username and password sign-in. Set `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, and a private `AUTH_SESSION_SECRET` (at least 32 characters). After the first sign-in, the app requires a new password of at least 12 characters. Password changes require the current password. Passwords are stored as scrypt hashes and sessions use an HttpOnly cookie. Email verification is not used.
+## Contacts CSV
 
-For local setup, run `pnpm run auth:setup-local` and enter the initial password when prompted; it stores only a scrypt hash and a generated session secret in the ignored `.env` file. To prepare a hash for a deployment, run `pnpm run auth:hash-password` and copy the result to `ADMIN_PASSWORD_HASH`. Do not put the plain password in `.env` or Git.
+Required columns: `name,phone`. Optional columns: `email,groupName,tags,marketingOptIn,optedOut`. Phones must use international format, e.g. `+14155550123`. Mark consent with `true` or `yes` only when permission was recorded; tags use `|` between values. Duplicate phone numbers are skipped. Opt-out always overrides opt-in.
 
-All app pages and API routes require a valid admin session, except the login and webhook endpoints. Change password and sign out controls are available in the sidebar.
+## Scheduled campaigns
+
+The protected endpoint is `GET /api/cron/campaigns`; set a private `CRON_SECRET` of at least 32 characters. Vercel sends it as `Authorization: Bearer <CRON_SECRET>`. This project is on Vercel Hobby, so `vercel.json` runs the automatic sender once daily at 00:00 UTC and campaigns may be delayed by up to a day. Use the manual **Send next batch** action for immediate progress. More frequent schedules require a Vercel plan that supports a higher cron frequency or an external scheduler calling this protected endpoint.
+
+## Admin login and deployment
+
+The app uses a single-admin username and password. Set `ADMIN_USERNAME`, a scrypt `ADMIN_PASSWORD_HASH`, and a private `AUTH_SESSION_SECRET` (at least 32 characters). Change the initial password after signing in. For local setup, run `pnpm run auth:setup-local`; to generate a deployment hash, run `pnpm run auth:hash-password`. Never put plain passwords or provider secrets in Git.
+
+Set `DATABASE_URL` and `DATABASE_URL_UNPOOLED` in the deployment environment. Apply database migrations with `pnpm exec prisma migrate deploy` before deploying schema-dependent code. Build with `pnpm run build` and serve with `pnpm run start`.
