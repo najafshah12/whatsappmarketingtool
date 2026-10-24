@@ -1,6 +1,6 @@
-# Intellect Bulk Sender
+# ReachPulse
 
-A WhatsApp Business campaign workspace built with Next.js, React, TypeScript, Prisma, and PostgreSQL.
+ReachPulse — Amplifying Your Reach. A WhatsApp Business campaign workspace built with Next.js, React, TypeScript, Prisma, and PostgreSQL.
 
 ## Workspace modules
 
@@ -37,6 +37,10 @@ Set `WA_ACCESS_TOKEN`, `WA_PHONE_NUMBER_ID`, `WA_BUSINESS_ACCOUNT_ID`, `WA_WEBHO
 
 Build with `pnpm run build` and run with `pnpm run start`. Set `DATABASE_URL` and `DATABASE_URL_UNPOOLED` in the deployment environment. Apply database migrations with `pnpm exec prisma migrate deploy` before serving the updated app. Keep `.env` and all credentials out of Git.
 
-## Security
+## Admin login and password
 
-This workspace is a single-admin prototype without login or role-based authorization. Add authentication and authorization before exposing administrative routes publicly. API routes validate user input and avoid returning server-side exceptions or credentials.
+The app is protected by a single-admin username and password sign-in. Set `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, and a private `AUTH_SESSION_SECRET` (at least 32 characters). After the first sign-in, the app requires a new password of at least 12 characters. Password changes require the current password. Passwords are stored as scrypt hashes and sessions use an HttpOnly cookie. Email verification is not used.
+
+For local setup, run `pnpm run auth:setup-local` and enter the initial password when prompted; it stores only a scrypt hash and a generated session secret in the ignored `.env` file. To prepare a hash for a deployment, run `pnpm run auth:hash-password` and copy the result to `ADMIN_PASSWORD_HASH`. Do not put the plain password in `.env` or Git.
+
+All app pages and API routes require a valid admin session, except the login and webhook endpoints. Change password and sign out controls are available in the sidebar.
