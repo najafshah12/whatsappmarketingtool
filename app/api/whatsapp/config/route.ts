@@ -12,6 +12,7 @@ export async function GET() {
   ].filter(Boolean);
   return NextResponse.json({
     enabled: missing.length === 0,
+    cronConfigured: (process.env.CRON_SECRET?.trim().length || 0) >= 32,
     appId: config.appId,
     configId: config.configId,
     graphVersion: config.graphVersion,

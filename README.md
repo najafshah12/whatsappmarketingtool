@@ -52,7 +52,7 @@ Required columns: `name,phone`. Optional columns: `email,groupName,tags,marketin
 
 ## Scheduled campaigns
 
-The protected endpoint is `GET /api/cron/campaigns`; set a private `CRON_SECRET` of at least 32 characters. Vercel sends it as `Authorization: Bearer <CRON_SECRET>`. This project is on Vercel Hobby, so `vercel.json` runs the automatic sender once daily at 00:00 UTC and campaigns may be delayed by up to a day. Use the manual **Send next batch** action for immediate progress. More frequent schedules require a Vercel plan that supports a higher cron frequency or an external scheduler calling this protected endpoint.
+The protected endpoint is `GET /api/cron/campaigns`; set a private `CRON_SECRET` of at least 32 characters in the Production environment and redeploy. Vercel sends it as `Authorization: Bearer <CRON_SECRET>`. Without this variable, the cron endpoint stays locked and scheduled sends do not run. This project is on Vercel Hobby, so `vercel.json` schedules the sender once daily at 00:00 UTC and campaigns may be delayed by up to a day. Use the manual **Send next batch** action for immediate progress. More frequent schedules require a Vercel plan that supports a higher cron frequency or an external scheduler calling this protected endpoint.
 
 ## Admin login and deployment
 
