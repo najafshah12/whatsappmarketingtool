@@ -41,6 +41,7 @@ export default function LoginPage() {
       </form>
       <p className="auth-copy" style={{ textAlign: "center", marginTop: 18 }}>New agency? <Link href="/register">Create an agency account</Link></p>
       <div className="auth-foot"><ShieldCheck size={14}/> Protected with secure password sign-in</div>
-      <nav aria-label="Legal information" style={{ display: "flex", justifyContent: "center", gap: 15, marginTop: 14, fontSize: 10 }}><Link href="/privacy" style={{ color: "#4e7e92" }}>Privacy</Link><Link href="/terms" style={{ color: "#4e7e92" }}>Terms</Link><Link href="/data-deletion" style={{ color: "#4e7e92" }}>Data deletion</Link></nav>\n    </section><footer className="auth-caption">RBS <span>·</span> BUSINESS WORKSPACE</footer>
+      <nav aria-label="Legal information" style={{ display: "flex", justifyContent: "center", gap: 15, marginTop: 14, fontSize: 10 }}><Link href="/privacy" style={{ color: "#4e7e92" }}>Privacy</Link><Link href="/terms" style={{ color: "#4e7e92" }}>Terms</Link><Link href="/data-deletion" style={{ color: "#4e7e92" }}>Data deletion</Link></nav>
+    </section><footer className="auth-caption">RBS <span>·</span> BUSINESS WORKSPACE</footer>
   </main>;
 }
